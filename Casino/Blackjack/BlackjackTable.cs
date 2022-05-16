@@ -88,7 +88,7 @@ namespace Casino.Blackjack
             Console.WriteLine("Your Hand Value: " + player.GetBestValidCardValue());
             Console.WriteLine();
             Console.WriteLine("Dealer Card: " + dealer.Hand.card2);
-            Console.WriteLine("Dealers Value: " + dealer.Hand.card2.GetRawBlackjackValue());
+            Console.WriteLine("Dealers Value: " + (dealer.Hand.card2.Value == CardValue.Ace ? 11 : dealer.Hand.card2.GetRawBlackjackValue()));
             Console.WriteLine();
 
             string? playerInput = "";
@@ -109,10 +109,14 @@ namespace Casino.Blackjack
                             Console.WriteLine(card);
                         }
                         Console.WriteLine("Your value: " + player.GetBestValidCardValue());
-
+                        Console.ReadLine();
                     }
-                    Console.WriteLine();
                 }
+            }
+            else
+            {
+                Console.WriteLine("BLACKJACK");
+                Console.ReadLine();
             }
         }
 
