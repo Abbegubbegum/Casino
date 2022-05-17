@@ -7,6 +7,8 @@ namespace Casino.Structures
     {
         public List<Card> extraCards = new();
 
+        public bool blackjack = false;
+
         public BlackjackPlayer(string name) : base(name)
         {
         }
@@ -14,6 +16,12 @@ namespace Casino.Structures
         public BlackjackPlayer(Player p) : base(p.Name)
         {
             Hand = p.Hand;
+        }
+
+        public void Reset()
+        {
+            extraCards.RemoveRange(0, extraCards.Count);
+            blackjack = false;
         }
 
         public int GetRawCardValue()
@@ -66,6 +74,20 @@ namespace Casino.Structures
         public bool HasAnAce()
         {
             return GetCards().FindAll(i => i.Value == CardValue.Ace).Count > 0;
+        }
+
+        public bool IsSoft()
+        {
+            return GetRawCardValue() != GetBestValidCardValue();
+        }
+
+        public string GetValueToString()
+        {
+            string value = GetBestValidCardValue().ToString();
+            if (IsSoft())
+                value = string.Concat("Soft ", value);
+
+            return value;
         }
     }
 

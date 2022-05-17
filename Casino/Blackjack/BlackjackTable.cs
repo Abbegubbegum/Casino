@@ -22,26 +22,40 @@ namespace Casino.Blackjack
         {
             foreach (BlackjackPlayer p in players)
             {
+                p.Reset();
                 p.Hand = deck.DealHand();
-                // p.Hand = new Hand(new Card(Suit.Diamond, CardValue.Ace), new Card(Suit.Diamond, CardValue.Queen));
+                // p.Hand = new Hand(new Card(Suit.Diamond, CardValue.Ace), new Card(Suit.Diamond, CardValue.Five));
             }
 
+            dealer.Reset();
             dealer.Hand = deck.DealHand();
             // dealer.Hand = new Hand(new Card(Suit.Diamond, CardValue.Ace), new Card(Suit.Diamond, CardValue.Queen));
 
-            foreach (var player in players)
+            if (dealer.GetBestValidCardValue() == 21)
             {
-                PerformPlayerTurn(player);
+                dealer.blackjack = true;
+                Console.WriteLine("DEALER BLACKJACK");
+                Console.WriteLine();
+            }
+            else
+            {
+                foreach (var player in players)
+                {
+                    PerformPlayerTurn(player);
+                }
             }
 
-            Console.WriteLine("Dealer Hand: " + dealer.Hand);
-            Console.WriteLine("Dealers Value: " + dealer.GetBestValidCardValue());
+
+            Console.WriteLine($"Dealer Hand: {dealer.Hand}");
+            Console.WriteLine($"Dealers Value: {dealer.GetValueToString()}");
             Console.ReadLine();
 
-            bool allPlayersHaveBlackJack = players.FindAll(p => !p.HasAnAce() || p.extraCards.Count != 0).Count == 0;
-            bool allPlayersAreBust = players.FindAll(p => !p.IsBusted()).Count == 0;
+            var playersThatNeedTheDealerPlay = from player in players
+                                               where !player.blackjack && !player.IsBusted()
+                                               select player;
 
-            if (!allPlayersAreBust || !allPlayersHaveBlackJack)
+
+            if (playersThatNeedTheDealerPlay.Any())
             {
                 while (dealer.GetBestValidCardValue() <= 16)
                 {
@@ -54,7 +68,7 @@ namespace Casino.Blackjack
                     {
                         Console.WriteLine(card);
                     }
-                    Console.WriteLine("Dealer value: " + dealer.GetBestValidCardValue());
+                    Console.WriteLine($"Dealer value: {dealer.GetValueToString()}");
 
                     Console.ReadLine();
                 }
@@ -68,9 +82,48 @@ namespace Casino.Blackjack
 
         }
 
+        private void PerformPlayerTurn(BlackjackPlayer player)
+        {
+            Console.WriteLine($"{player.Name}'s Hand: {player.Hand}");
+            Console.WriteLine($"{player.Name}'s Hand Value: {player.GetValueToString()}");
+            Console.WriteLine();
+            Console.WriteLine($"Dealer Card: {dealer.Hand.card2}");
+            Console.WriteLine($"Dealer's Value: {(dealer.Hand.card2.Value == CardValue.Ace ? 11 : dealer.Hand.card2.GetRawBlackjackValue())}");
+            Console.WriteLine();
+
+            string? playerInput = "";
+
+            if (player.GetBestValidCardValue() != 21 && dealer.GetBestValidCardValue() != 21)
+            {
+                while (playerInput != "2" && !player.IsBusted())
+                {
+                    Console.WriteLine("What you do, Hit=1 Stay=2");
+                    playerInput = Console.ReadLine();
+                    if (playerInput == "1")
+                    {
+                        player.extraCards.Add(deck.DealCard());
+
+                        Console.WriteLine($"{player.Name}'s Cards: ");
+                        foreach (Card card in player.GetCards())
+                        {
+                            Console.WriteLine(card);
+                        }
+                        Console.WriteLine($"{player.Name}'s value: {player.GetValueToString()}");
+                        // Console.ReadLine();
+                    }
+                }
+            }
+            else
+            {
+                player.blackjack = true;
+                Console.WriteLine("BLACKJACK");
+                Console.ReadLine();
+            }
+        }
+
         private void ShowResult(BlackjackPlayer player)
         {
-            Console.WriteLine(player.Name + ": ");
+            Console.WriteLine($"{player.Name}: ");
             if (dealer.IsBusted() && player.IsBusted())
             {
                 Console.WriteLine("Both busted, you lose");
@@ -89,44 +142,6 @@ namespace Casino.Blackjack
                 Console.WriteLine("stand, its a draw");
             }
             Console.WriteLine();
-        }
-
-        private void PerformPlayerTurn(BlackjackPlayer player)
-        {
-            Console.WriteLine(player.Name + "'s Hand: " + player.Hand);
-            Console.WriteLine(player.Name + "'s Hand Value: " + player.GetBestValidCardValue());
-            Console.WriteLine();
-            Console.WriteLine("Dealer Card: " + dealer.Hand.card2);
-            Console.WriteLine("Dealer's Value: " + (dealer.Hand.card2.Value == CardValue.Ace ? 11 : dealer.Hand.card2.GetRawBlackjackValue()));
-            Console.WriteLine();
-
-            string? playerInput = "";
-
-            if (player.GetBestValidCardValue() != 21 && dealer.GetBestValidCardValue() != 21)
-            {
-                while (playerInput != "2" && !player.IsBusted())
-                {
-                    Console.WriteLine("What you do, Hit=1 Stay=2");
-                    playerInput = Console.ReadLine();
-                    if (playerInput == "1")
-                    {
-                        player.extraCards.Add(deck.DealCard());
-
-                        Console.WriteLine(player.Name + "'s Cards: ");
-                        foreach (Card card in player.GetCards())
-                        {
-                            Console.WriteLine(card);
-                        }
-                        Console.WriteLine(player.Name + "'s value: " + player.GetBestValidCardValue());
-                        Console.ReadLine();
-                    }
-                }
-            }
-            else
-            {
-                Console.WriteLine("BLACKJACK");
-                Console.ReadLine();
-            }
         }
 
         public void AddPlayer(Player p)
