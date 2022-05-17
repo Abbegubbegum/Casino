@@ -15,7 +15,7 @@ namespace Casino.Blackjack
         public BlackjackTable()
         {
             deck = new Deck();
-            dealer = new BlackjackPlayer();
+            dealer = new BlackjackPlayer("Dealer");
         }
 
         public void RunGame()
@@ -38,9 +38,12 @@ namespace Casino.Blackjack
             Console.WriteLine("Dealers Value: " + dealer.GetBestValidCardValue());
             Console.ReadLine();
 
-            if (players[0].GetBestValidCardValue() != 21 || players[0].extraCards.Count != 0)
+            bool allPlayersHaveBlackJack = players.FindAll(p => !p.HasAnAce() || p.extraCards.Count != 0).Count == 0;
+            bool allPlayersAreBust = players.FindAll(p => !p.IsBusted()).Count == 0;
+
+            if (!allPlayersAreBust || !allPlayersHaveBlackJack)
             {
-                while (dealer.GetBestValidCardValue() <= 16 && !players[0].IsBusted())
+                while (dealer.GetBestValidCardValue() <= 16)
                 {
                     Console.WriteLine("Dealer takes a new card");
                     Console.WriteLine();
@@ -59,36 +62,42 @@ namespace Casino.Blackjack
 
             foreach (var player in players)
             {
-                if (dealer.IsBusted() && player.IsBusted())
-                {
-                    Console.WriteLine("Both busted, dealer win");
-                }
-                else if (dealer.GetBestValidCardValue() > player.GetBestValidCardValue() && !dealer.IsBusted() || player.IsBusted())
-                {
-                    Console.WriteLine("Dealer win");
-
-                }
-                else if (dealer.GetBestValidCardValue() < player.GetBestValidCardValue() && !player.IsBusted() || dealer.IsBusted())
-                {
-                    Console.WriteLine("Player Win");
-                }
-                else
-                {
-                    Console.WriteLine("Tie");
-                }
-                Console.WriteLine();
+                ShowResult(player);
             }
             Console.ReadLine();
 
         }
 
+        private void ShowResult(BlackjackPlayer player)
+        {
+            Console.WriteLine(player.Name + ": ");
+            if (dealer.IsBusted() && player.IsBusted())
+            {
+                Console.WriteLine("Both busted, you lose");
+            }
+            else if (dealer.GetBestValidCardValue() > player.GetBestValidCardValue() && !dealer.IsBusted() || player.IsBusted())
+            {
+                Console.WriteLine("you lose");
+
+            }
+            else if (dealer.GetBestValidCardValue() < player.GetBestValidCardValue() && !player.IsBusted() || dealer.IsBusted())
+            {
+                Console.WriteLine("you win");
+            }
+            else
+            {
+                Console.WriteLine("stand, its a draw");
+            }
+            Console.WriteLine();
+        }
+
         private void PerformPlayerTurn(BlackjackPlayer player)
         {
-            Console.WriteLine("Your Hand: " + player.Hand);
-            Console.WriteLine("Your Hand Value: " + player.GetBestValidCardValue());
+            Console.WriteLine(player.Name + "'s Hand: " + player.Hand);
+            Console.WriteLine(player.Name + "'s Hand Value: " + player.GetBestValidCardValue());
             Console.WriteLine();
             Console.WriteLine("Dealer Card: " + dealer.Hand.card2);
-            Console.WriteLine("Dealers Value: " + (dealer.Hand.card2.Value == CardValue.Ace ? 11 : dealer.Hand.card2.GetRawBlackjackValue()));
+            Console.WriteLine("Dealer's Value: " + (dealer.Hand.card2.Value == CardValue.Ace ? 11 : dealer.Hand.card2.GetRawBlackjackValue()));
             Console.WriteLine();
 
             string? playerInput = "";
@@ -103,12 +112,12 @@ namespace Casino.Blackjack
                     {
                         player.extraCards.Add(deck.DealCard());
 
-                        Console.WriteLine("Your Cards: ");
+                        Console.WriteLine(player.Name + "'s Cards: ");
                         foreach (Card card in player.GetCards())
                         {
                             Console.WriteLine(card);
                         }
-                        Console.WriteLine("Your value: " + player.GetBestValidCardValue());
+                        Console.WriteLine(player.Name + "'s value: " + player.GetBestValidCardValue());
                         Console.ReadLine();
                     }
                 }
@@ -122,10 +131,7 @@ namespace Casino.Blackjack
 
         public void AddPlayer(Player p)
         {
-            BlackjackPlayer bp = new()
-            {
-                Hand = p.Hand
-            };
+            BlackjackPlayer bp = new(p);
 
             players.Add(bp);
         }

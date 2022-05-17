@@ -7,6 +7,15 @@ namespace Casino.Structures
     {
         public List<Card> extraCards = new();
 
+        public BlackjackPlayer(string name) : base(name)
+        {
+        }
+
+        public BlackjackPlayer(Player p) : base(p.Name)
+        {
+            Hand = p.Hand;
+        }
+
         public int GetRawCardValue()
         {
             int value = 0;
