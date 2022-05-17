@@ -7,9 +7,12 @@ namespace Casino.Structures
         public Hand Hand { get; set; }
         public string Name { get; init; }
 
-        public Player(string name)
+        public int Balance { get; set; }
+
+        public Player(string name, int balance = 100)
         {
             Name = name;
+            Balance = balance;
         }
     }
 }

@@ -20,9 +20,15 @@ namespace Casino.Blackjack
 
         public void RunGame()
         {
-            foreach (BlackjackPlayer p in players)
+            foreach (var p in players)
             {
                 p.Reset();
+
+                GetPlayerBet(p);
+            }
+
+            foreach (BlackjackPlayer p in players)
+            {
                 p.Hand = deck.DealHand();
                 // p.Hand = new Hand(new Card(Suit.Diamond, CardValue.Ace), new Card(Suit.Diamond, CardValue.Five));
             }
@@ -82,6 +88,22 @@ namespace Casino.Blackjack
 
         }
 
+        private void GetPlayerBet(BlackjackPlayer player)
+        {
+            Console.WriteLine("How much you betting?");
+            Console.WriteLine($"Balance: {player.Balance}");
+
+            bool parseSuccess = int.TryParse(Console.ReadLine(), out int input);
+            while (!parseSuccess || input < 0 || input > player.Balance)
+            {
+                Console.WriteLine("Try again");
+                parseSuccess = int.TryParse(Console.ReadLine(), out input);
+            }
+
+            player.currentBet = input;
+            player.Balance -= input;
+        }
+
         private void PerformPlayerTurn(BlackjackPlayer player)
         {
             Console.WriteLine($"{player.Name}'s Hand: {player.Hand}");
@@ -110,6 +132,7 @@ namespace Casino.Blackjack
                         }
                         Console.WriteLine($"{player.Name}'s value: {player.GetValueToString()}");
                         // Console.ReadLine();
+                        Console.WriteLine();
                     }
                 }
             }
@@ -136,10 +159,13 @@ namespace Casino.Blackjack
             else if (dealer.GetBestValidCardValue() < player.GetBestValidCardValue() && !player.IsBusted() || dealer.IsBusted())
             {
                 Console.WriteLine("you win");
+                player.currentBet *= 2;
+                player.Balance += player.currentBet;
             }
             else
             {
                 Console.WriteLine("stand, its a draw");
+                player.Balance += player.currentBet;
             }
             Console.WriteLine();
         }

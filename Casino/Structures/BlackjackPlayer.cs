@@ -9,6 +9,8 @@ namespace Casino.Structures
 
         public bool blackjack = false;
 
+        public int currentBet = 0;
+
         public BlackjackPlayer(string name) : base(name)
         {
         }
@@ -16,12 +18,14 @@ namespace Casino.Structures
         public BlackjackPlayer(Player p) : base(p.Name)
         {
             Hand = p.Hand;
+            Balance = p.Balance;
         }
 
         public void Reset()
         {
             extraCards.RemoveRange(0, extraCards.Count);
             blackjack = false;
+            currentBet = 0;
         }
 
         public int GetRawCardValue()
