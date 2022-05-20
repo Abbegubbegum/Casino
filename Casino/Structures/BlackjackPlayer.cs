@@ -19,6 +19,7 @@ namespace Casino.Structures
         {
             Hand = p.Hand;
             Balance = p.Balance;
+            ID = p.ID;
         }
 
         public void Reset()

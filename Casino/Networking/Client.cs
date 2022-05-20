@@ -10,9 +10,9 @@ namespace Casino.Networking
 
         Player p;
 
-        public Client(string url, Player p)
+        public Client(string url)
         {
-            this.p = p;
+            // this.p = p;
 
             ws = new WebSocket(url);
 
@@ -21,7 +21,12 @@ namespace Casino.Networking
                 Console.WriteLine("Client Connected to " + url);
             };
 
-            ws.OnMessage += p.OnMessage;
+            // ws.OnMessage += p.OnMessage;
+
+            ws.OnMessage += (sender, e) =>
+            {
+                Console.WriteLine("Client received message: " + e.Data);
+            };
 
             ws.OnClose += (sender, e) =>
             {

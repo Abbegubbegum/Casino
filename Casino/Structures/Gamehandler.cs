@@ -13,30 +13,34 @@ namespace Casino.Structures
 
         BlackjackTable table;
 
+        static List<Player> players = new();
+
         public Gamehandler()
         {
+            table = new BlackjackTable();
             SetupWSServer();
 
-            Player p1 = new Player("albin");
-            Client c = new Client(wsUrl + "/Blackjack", p1);
+            Client c = new Client(wsUrl + "/Blackjack");
 
-            ws.WebSocketServices.TryGetServiceHost("/Echo", out var host);
-
-            host.Sessions.Broadcast("she");
-
-            Console.ReadLine();
-
+            ws.WebSocketServices.TryGetServiceHost("/Blackjack", out table.bjHost);
             // // Player p2 = new Player("bianc");
 
-            table = new BlackjackTable();
+            Console.WriteLine("Waiting on players");
+            while (players.Count == 0) ;
 
-            // table.AddPlayer(p1);
-            // // table.AddPlayer(p2);
+            Console.WriteLine("Starting game");
+            Console.ReadLine();
 
-            // while (true)
-            // {
-            //     table.RunGame();
-            // }
+
+            foreach (var p in players)
+            {
+                table.AddPlayer(p);
+            }// // table.AddPlayer(p2);
+
+            while (true)
+            {
+                table.RunGame();
+            }
         }
 
         private void SetupWSServer()
@@ -45,10 +49,19 @@ namespace Casino.Structures
 
             ws.AddWebSocketService<Echo>("/Echo");
             ws.AddWebSocketService<Echo>("/Echo2");
-            ws.AddWebSocketService<BlackjackService>("/Blackjack");
+            ws.AddWebSocketService<BlackjackService>("/Blackjack", b => b.table = table);
 
             ws.Start();
             Console.WriteLine($"Websocket server started at ws://localhost:8080");
+        }
+
+        public static void AddPlayerWithID(string id)
+        {
+            Console.WriteLine("Adding player to players");
+            Player p = new Player("who");
+            p.ID = id;
+
+            players.Add(p);
         }
     }
 }

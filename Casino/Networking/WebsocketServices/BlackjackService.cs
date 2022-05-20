@@ -1,12 +1,15 @@
 using WebSocketSharp;
 using WebSocketSharp.Server;
-using System.Linq;
+using Casino.Structures;
+using Casino.Blackjack;
 
 namespace Casino.Networking.WebsocketServices
 {
     public class BlackjackService : WebSocketBehavior
     {
-        IEnumerable<string> ids = Enumerable.Empty<string>();
+        static List<string> currentIds = new();
+
+        public BlackjackTable table;
 
         protected override void OnOpen()
         {
@@ -14,9 +17,11 @@ namespace Casino.Networking.WebsocketServices
 
             foreach (var id in newIDs)
             {
-                if (!ids.Contains(id))
+                if (!currentIds.Contains(id))
                 {
                     Console.WriteLine($"BLACKJACK NEW ID + {id}");
+                    Gamehandler.AddPlayerWithID(id);
+                    currentIds.Add(id);
                 }
             }
 
@@ -27,7 +32,7 @@ namespace Casino.Networking.WebsocketServices
 
         protected override void OnMessage(MessageEventArgs e)
         {
-            
+            table.RecieveMessage(e.Data);
         }
     }
 }

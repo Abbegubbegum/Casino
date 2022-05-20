@@ -1,6 +1,7 @@
 using Casino.enums;
 using Casino.Objects;
 using Casino.Structures;
+using WebSocketSharp.Server;
 
 namespace Casino.Blackjack
 {
@@ -11,6 +12,10 @@ namespace Casino.Blackjack
         private BlackjackPlayer dealer;
 
         private List<BlackjackPlayer> players = new();
+
+        public WebSocketServiceHost bjHost;
+
+        private Queue<string> messages = new Queue<string>();
 
         public BlackjackTable()
         {
@@ -40,8 +45,8 @@ namespace Casino.Blackjack
             if (dealer.GetBestValidCardValue() == 21)
             {
                 dealer.blackjack = true;
-                Console.WriteLine("DEALER BLACKJACK");
-                Console.WriteLine();
+                BroadcastMessage("DEALER BLACKJACK");
+
             }
             else
             {
@@ -52,9 +57,8 @@ namespace Casino.Blackjack
             }
 
 
-            Console.WriteLine($"Dealer Hand: {dealer.Hand}");
-            Console.WriteLine($"Dealers Value: {dealer.GetValueToString()}");
-            Console.ReadLine();
+            BroadcastMessage($"Dealer Hand: {dealer.Hand}");
+            BroadcastMessage($"Dealers Value: {dealer.GetValueToString()}");
 
             var playersThatNeedTheDealerPlay = from player in players
                                                where !player.blackjack && !player.IsBusted()
@@ -65,18 +69,17 @@ namespace Casino.Blackjack
             {
                 while (dealer.GetBestValidCardValue() <= 16)
                 {
-                    Console.WriteLine("Dealer takes a new card");
-                    Console.WriteLine();
+                    BroadcastMessage("Dealer takes a new card");
                     dealer.extraCards.Add(deck.DealCard());
 
-                    Console.WriteLine("Dealer Cards: ");
+                    BroadcastMessage("Dealer Cards: ");
                     foreach (Card card in dealer.GetCards())
                     {
-                        Console.WriteLine(card);
+                        BroadcastMessage(card.ToString());
                     }
-                    Console.WriteLine($"Dealer value: {dealer.GetValueToString()}");
+                    BroadcastMessage($"Dealer value: {dealer.GetValueToString()}");
 
-                    Console.ReadLine();
+                    GetMessage();
                 }
             }
 
@@ -84,20 +87,20 @@ namespace Casino.Blackjack
             {
                 ShowResult(player);
             }
-            Console.ReadLine();
+            GetMessage();
 
         }
 
         private void GetPlayerBet(BlackjackPlayer player)
         {
-            Console.WriteLine("How much you betting?");
-            Console.WriteLine($"Balance: {player.Balance}");
+            SendMessageToPlayer("How much you betting?", player);
+            SendMessageToPlayer($"Balance: {player.Balance}", player);
 
-            bool parseSuccess = int.TryParse(Console.ReadLine(), out int input);
+            bool parseSuccess = int.TryParse(GetMessage(), out int input);
             while (!parseSuccess || input < 0 || input > player.Balance)
             {
-                Console.WriteLine("Try again");
-                parseSuccess = int.TryParse(Console.ReadLine(), out input);
+                SendMessageToPlayer("Try again", player);
+                parseSuccess = int.TryParse(GetMessage(), out input);
             }
 
             player.currentBet = input;
@@ -106,12 +109,11 @@ namespace Casino.Blackjack
 
         private void PerformPlayerTurn(BlackjackPlayer player)
         {
-            Console.WriteLine($"{player.Name}'s Hand: {player.Hand}");
-            Console.WriteLine($"{player.Name}'s Hand Value: {player.GetValueToString()}");
-            Console.WriteLine();
-            Console.WriteLine($"Dealer Card: {dealer.Hand.card2}");
-            Console.WriteLine($"Dealer's Value: {(dealer.Hand.card2.Value == CardValue.Ace ? 11 : dealer.Hand.card2.GetRawBlackjackValue())}");
-            Console.WriteLine();
+            SendMessageToPlayer($"{player.Name}'s Hand: {player.Hand}", player);
+            SendMessageToPlayer($"{player.Name}'s Hand Value: {player.GetValueToString()}", player);
+
+            SendMessageToPlayer($"Dealer Card: {dealer.Hand.card2}", player);
+            SendMessageToPlayer($"Dealer's Value: {(dealer.Hand.card2.Value == CardValue.Ace ? 11 : dealer.Hand.card2.GetRawBlackjackValue())}", player);
 
             string? playerInput = "";
 
@@ -119,55 +121,53 @@ namespace Casino.Blackjack
             {
                 while (playerInput != "2" && !player.IsBusted())
                 {
-                    Console.WriteLine("What you do, Hit=1 Stay=2");
-                    playerInput = Console.ReadLine();
+                    SendMessageToPlayer("What you do, Hit=1 Stay=2", player);
+                    playerInput = GetMessage();
                     if (playerInput == "1")
                     {
                         player.extraCards.Add(deck.DealCard());
 
-                        Console.WriteLine($"{player.Name}'s Cards: ");
+                        SendMessageToPlayer($"{player.Name}'s Cards: ", player);
                         foreach (Card card in player.GetCards())
                         {
-                            Console.WriteLine(card);
+                            SendMessageToPlayer(card.ToString(), player);
                         }
-                        Console.WriteLine($"{player.Name}'s value: {player.GetValueToString()}");
-                        // Console.ReadLine();
-                        Console.WriteLine();
+                        SendMessageToPlayer($"{player.Name}'s value: {player.GetValueToString()}", player);
+                        // GetMessage();
                     }
                 }
             }
             else
             {
                 player.blackjack = true;
-                Console.WriteLine("BLACKJACK");
-                Console.ReadLine();
+                SendMessageToPlayer("BLACKJACK", player);
+                GetMessage();
             }
         }
 
         private void ShowResult(BlackjackPlayer player)
         {
-            Console.WriteLine($"{player.Name}: ");
+            SendMessageToPlayer($"{player.Name}: ", player);
             if (dealer.IsBusted() && player.IsBusted())
             {
-                Console.WriteLine("Both busted, you lose");
+                SendMessageToPlayer("Both busted, you lose", player);
             }
             else if (dealer.GetBestValidCardValue() > player.GetBestValidCardValue() && !dealer.IsBusted() || player.IsBusted())
             {
-                Console.WriteLine("you lose");
+                SendMessageToPlayer("you lose", player);
 
             }
             else if (dealer.GetBestValidCardValue() < player.GetBestValidCardValue() && !player.IsBusted() || dealer.IsBusted())
             {
-                Console.WriteLine("you win");
+                SendMessageToPlayer("you win", player);
                 player.currentBet *= 2;
                 player.Balance += player.currentBet;
             }
             else
             {
-                Console.WriteLine("stand, its a draw");
+                SendMessageToPlayer("stand, its a draw", player);
                 player.Balance += player.currentBet;
             }
-            Console.WriteLine();
         }
 
         public void AddPlayer(Player p)
@@ -175,6 +175,30 @@ namespace Casino.Blackjack
             BlackjackPlayer bp = new(p);
 
             players.Add(bp);
+        }
+
+        private void SendMessageToPlayer(string msg, Player p)
+        {
+            Console.WriteLine("Sending message to player " + msg);
+            bjHost.Sessions.SendTo(msg, p.ID);
+        }
+
+        private void BroadcastMessage(string msg)
+        {
+            bjHost.Sessions.Broadcast(msg);
+        }
+
+        public void RecieveMessage(string msg)
+        {
+            Console.WriteLine("Table recieved message: " + msg);
+            messages.Enqueue(msg);
+        }
+
+        public string GetMessage()
+        {
+            while (messages.Count <= 0) ;
+
+            return messages.Dequeue();
         }
     }
 }
