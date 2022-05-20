@@ -7,6 +7,7 @@ namespace Casino.Structures
 {
     public class Gamehandler
     {
+        // public const string wsUrl = "ws://10.151.169.33:8080";
         public const string wsUrl = "ws://localhost:8080";
 
         WebSocketServer ws;
@@ -20,16 +21,16 @@ namespace Casino.Structures
             table = new BlackjackTable();
             SetupWSServer();
 
-            Client c = new Client(wsUrl + "/Blackjack");
+            // Client c = new Client(wsUrl + "/Blackjack");
 
             ws.WebSocketServices.TryGetServiceHost("/Blackjack", out table.bjHost);
-            // // Player p2 = new Player("bianc");
+            // Player p2 = new Player("bianc");
 
             Console.WriteLine("Waiting on players");
             while (players.Count == 0) ;
 
-            Console.WriteLine("Starting game");
             Console.ReadLine();
+            Console.WriteLine("Starting game");
 
 
             foreach (var p in players)

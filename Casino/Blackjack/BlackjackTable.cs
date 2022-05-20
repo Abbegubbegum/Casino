@@ -1,4 +1,6 @@
+using System.Text.Json;
 using Casino.enums;
+using Casino.Networking;
 using Casino.Objects;
 using Casino.Structures;
 using WebSocketSharp.Server;
@@ -15,7 +17,7 @@ namespace Casino.Blackjack
 
         public WebSocketServiceHost bjHost;
 
-        private Queue<string> messages = new Queue<string>();
+        private List<Message> messageStream = new();
 
         public BlackjackTable()
         {
@@ -78,8 +80,6 @@ namespace Casino.Blackjack
                         BroadcastMessage(card.ToString());
                     }
                     BroadcastMessage($"Dealer value: {dealer.GetValueToString()}");
-
-                    GetMessage();
                 }
             }
 
@@ -87,7 +87,6 @@ namespace Casino.Blackjack
             {
                 ShowResult(player);
             }
-            GetMessage();
 
         }
 
@@ -96,11 +95,11 @@ namespace Casino.Blackjack
             SendMessageToPlayer("How much you betting?", player);
             SendMessageToPlayer($"Balance: {player.Balance}", player);
 
-            bool parseSuccess = int.TryParse(GetMessage(), out int input);
+            bool parseSuccess = int.TryParse(AwaitMessageFromPlayer(player), out int input);
             while (!parseSuccess || input < 0 || input > player.Balance)
             {
                 SendMessageToPlayer("Try again", player);
-                parseSuccess = int.TryParse(GetMessage(), out input);
+                parseSuccess = int.TryParse(AwaitMessageFromPlayer(player), out input);
             }
 
             player.currentBet = input;
@@ -122,7 +121,7 @@ namespace Casino.Blackjack
                 while (playerInput != "2" && !player.IsBusted())
                 {
                     SendMessageToPlayer("What you do, Hit=1 Stay=2", player);
-                    playerInput = GetMessage();
+                    playerInput = AwaitMessageFromPlayer(player);
                     if (playerInput == "1")
                     {
                         player.extraCards.Add(deck.DealCard());
@@ -141,7 +140,7 @@ namespace Casino.Blackjack
             {
                 player.blackjack = true;
                 SendMessageToPlayer("BLACKJACK", player);
-                GetMessage();
+                AwaitMessageFromPlayer(player);
             }
         }
 
@@ -180,25 +179,47 @@ namespace Casino.Blackjack
         private void SendMessageToPlayer(string msg, Player p)
         {
             Console.WriteLine("Sending message to player " + msg);
-            bjHost.Sessions.SendTo(msg, p.ID);
+            Message m = new Message()
+            {
+                senderID = bjHost.Path,
+                message = msg
+            };
+            bjHost.Sessions.SendTo(JsonSerializer.Serialize(m), p.ID);
         }
 
         private void BroadcastMessage(string msg)
         {
-            bjHost.Sessions.Broadcast(msg);
+            Message m = new Message()
+            {
+                senderID = bjHost.Path,
+                message = msg
+            };
+            bjHost.Sessions.Broadcast(JsonSerializer.Serialize(m));
         }
 
-        public void RecieveMessage(string msg)
+        public void RecieveMessage(Message msg)
         {
             Console.WriteLine("Table recieved message: " + msg);
-            messages.Enqueue(msg);
+            messageStream.Add(msg);
         }
 
-        public string GetMessage()
+        public string AwaitMessageFromPlayer(Player p)
         {
-            while (messages.Count <= 0) ;
-
-            return messages.Dequeue();
+            while (true)
+            {
+                if (messageStream.Count > 0)
+                {
+                    for (int i = messageStream.Count - 1; i >= 0; i--)
+                    {
+                        Message msg = messageStream[i];
+                        if (msg.senderID == p.ID)
+                        {
+                            messageStream.RemoveAt(i);
+                            return msg.message;
+                        }
+                    }
+                }
+            }
         }
     }
 }

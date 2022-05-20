@@ -1,4 +1,5 @@
 using System;
+using System.Text.Json;
 using Casino.Structures;
 using WebSocketSharp;
 
@@ -7,6 +8,8 @@ namespace Casino.Networking
     public class Client
     {
         public WebSocket ws;
+
+        public string ClientId { get; set; }
 
         Player p;
 
@@ -19,13 +22,23 @@ namespace Casino.Networking
             ws.OnOpen += (sender, e) =>
             {
                 Console.WriteLine("Client Connected to " + url);
+
             };
 
             // ws.OnMessage += p.OnMessage;
 
             ws.OnMessage += (sender, e) =>
             {
-                Console.WriteLine("Client received message: " + e.Data);
+                Message msg = JsonSerializer.Deserialize<Message>(e.Data);
+
+                if (ClientId == "" && msg.senderID == "")
+                {
+                    ClientId = msg.message;
+                }
+                else
+                {
+
+                }
             };
 
             ws.OnClose += (sender, e) =>
@@ -38,7 +51,13 @@ namespace Casino.Networking
 
         public void Send(string msg)
         {
-            ws.Send(msg);
+            Message m = new Message()
+            {
+                senderID = ClientId,
+                message = msg
+            };
+
+            ws.Send(JsonSerializer.Serialize(m));
         }
 
         public void Disconnect()

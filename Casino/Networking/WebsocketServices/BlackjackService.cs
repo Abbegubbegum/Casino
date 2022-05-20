@@ -2,6 +2,7 @@ using WebSocketSharp;
 using WebSocketSharp.Server;
 using Casino.Structures;
 using Casino.Blackjack;
+using System.Text.Json;
 
 namespace Casino.Networking.WebsocketServices
 {
@@ -13,26 +14,31 @@ namespace Casino.Networking.WebsocketServices
 
         protected override void OnOpen()
         {
-            var newIDs = Sessions.IDs;
 
-            foreach (var id in newIDs)
+            if (!currentIds.Contains(ID))
             {
-                if (!currentIds.Contains(id))
+                Console.WriteLine($"BLACKJACK NEW ID + {ID}");
+                Gamehandler.AddPlayerWithID(ID);
+                currentIds.Add(ID);
+                Message msg = new Message()
                 {
-                    Console.WriteLine($"BLACKJACK NEW ID + {id}");
-                    Gamehandler.AddPlayerWithID(id);
-                    currentIds.Add(id);
-                }
+                    message = ID
+                };
+                Send(JsonSerializer.Serialize(msg));
             }
-
-            // var differentIDs = from id in newIDs
-            //                    where !ids.Contains(id)
-            //                    select id;
         }
+
+        // var differentIDs = from id in newIDs
+        //                    where !ids.Contains(id)
+        //                    select id;
+
 
         protected override void OnMessage(MessageEventArgs e)
         {
-            table.RecieveMessage(e.Data);
+
+            table.RecieveMessage(JsonSerializer.Deserialize<Message>(e.Data));
         }
+
+
     }
 }
