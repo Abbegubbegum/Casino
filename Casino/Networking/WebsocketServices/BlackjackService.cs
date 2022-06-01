@@ -18,11 +18,12 @@ namespace Casino.Networking.WebsocketServices
             if (!currentIds.Contains(ID))
             {
                 Console.WriteLine($"BLACKJACK NEW ID + {ID}");
-                Gamehandler.AddPlayerWithID(ID);
+                ServerHandler.AddPlayerWithID(ID);
                 currentIds.Add(ID);
                 Message msg = new Message()
                 {
-                    message = ID
+                    type = "ID-ACK",
+                    data = ID
                 };
                 Send(JsonSerializer.Serialize(msg));
             }

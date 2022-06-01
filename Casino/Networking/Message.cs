@@ -2,8 +2,10 @@ namespace Casino.Networking
 {
     public struct Message
     {
-        public string senderID { get; set; }
+        public string sender { get; set; }
 
-        public string message { get; set; }
+        public string type { get; set; }
+
+        public string data { get; set; }
     }
 }

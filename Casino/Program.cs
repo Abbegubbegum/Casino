@@ -1,3 +1,3 @@
 ﻿using Casino.Structures;
 
-Gamehandler g = new Gamehandler();
+ServerHandler g = new ServerHandler();

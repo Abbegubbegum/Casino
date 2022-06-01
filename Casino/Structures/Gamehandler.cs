@@ -5,7 +5,7 @@ using Casino.Networking;
 
 namespace Casino.Structures
 {
-    public class Gamehandler
+    public class ServerHandler
     {
         // public const string wsUrl = "ws://10.151.169.33:8080";
         public const string wsUrl = "ws://localhost:8080";
@@ -16,27 +16,26 @@ namespace Casino.Structures
 
         static List<Player> players = new();
 
-        public Gamehandler()
+        public ServerHandler()
         {
             table = new BlackjackTable();
             SetupWSServer();
 
-            // Client c = new Client(wsUrl + "/Blackjack");
-
             ws.WebSocketServices.TryGetServiceHost("/Blackjack", out table.bjHost);
-            // Player p2 = new Player("bianc");
+        }
 
-            Console.WriteLine("Waiting on players");
-            while (players.Count == 0) ;
-
-            Console.ReadLine();
-            Console.WriteLine("Starting game");
-
+        public void Activate()
+        {
+            if (players.Count == 0)
+            {
+                Console.WriteLine("Waiting for a player");
+                while (players.Count == 0) ;
+            }
 
             foreach (var p in players)
             {
                 table.AddPlayer(p);
-            }// // table.AddPlayer(p2);
+            }
 
             while (true)
             {

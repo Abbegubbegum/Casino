@@ -181,8 +181,8 @@ namespace Casino.Blackjack
             Console.WriteLine("Sending message to player " + msg);
             Message m = new Message()
             {
-                senderID = bjHost.Path,
-                message = msg
+                sender = bjHost.Path,
+                data = msg
             };
             bjHost.Sessions.SendTo(JsonSerializer.Serialize(m), p.ID);
         }
@@ -191,8 +191,8 @@ namespace Casino.Blackjack
         {
             Message m = new Message()
             {
-                senderID = bjHost.Path,
-                message = msg
+                sender = bjHost.Path,
+                data = msg
             };
             bjHost.Sessions.Broadcast(JsonSerializer.Serialize(m));
         }
@@ -212,10 +212,10 @@ namespace Casino.Blackjack
                     for (int i = messageStream.Count - 1; i >= 0; i--)
                     {
                         Message msg = messageStream[i];
-                        if (msg.senderID == p.ID)
+                        if (msg.sender == p.ID)
                         {
                             messageStream.RemoveAt(i);
-                            return msg.message;
+                            return msg.data;
                         }
                     }
                 }
