@@ -22,6 +22,7 @@ namespace Casino.Structures
             SetupWSServer();
 
             ws.WebSocketServices.TryGetServiceHost("/Blackjack", out table.bjHost);
+            Activate();
         }
 
         public void Activate()
